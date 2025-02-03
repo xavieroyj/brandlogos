@@ -4,20 +4,23 @@ import { generateText, experimental_generateImage as generateImage } from "ai";
 import type { BrandFormValues } from "@/lib/schema";
 import { textModel, imageModel } from "@/lib/ai-config";
 import { removeThinkTags } from "@/lib/helper";
-import { iconTemplates } from "@/lib/templates/icon-templates";
+import { iconTemplates, getStyleGuide } from "@/lib/templates/icon-templates";
 
 export async function generateIcons(data: BrandFormValues) {
   console.log("Generating icons...");
   try {
     // Step 1: Use text model with template to generate an enhanced prompt
+    const styleGuide = getStyleGuide(data.style);
     const templatePrompt = iconTemplates.generateIconPrompt.formatTemplate({
       brandName: data.brandName,
       description: data.description,
       tags: data.tags,
-      style: data.style
+      style: data.style,
+      styleGuide
     });
     console.log("Template Prompt:", templatePrompt);
 
+    // Generate using the enhanced prompt
     const { text: enhancedPrompt } = await generateText({
       model: textModel,
       prompt: templatePrompt

@@ -1,7 +1,5 @@
 import { PromptTemplate, type TemplateFormat } from "@/lib/prompt-template";
 import { iconTemplates } from "./templates/icon-templates";
-import { IconStyle } from "./styles";
-import type { BrandFormValues } from "./schema";
 
 // Generic type for any template values
 export type PromptValues<T extends TemplateFormat> = {
@@ -12,10 +10,13 @@ export type PromptValues<T extends TemplateFormat> = {
     : never;
 };
 
-// Template registry type
+// Helper type to extract expected values type from a template
+type ExtractTemplateValues<T extends PromptTemplate<TemplateFormat>> = Parameters<T['formatTemplate']>[0];
+
+// Template registry type with better typing
 type TemplateRegistry = {
   [K: string]: {
-    [SubK: string]: PromptTemplate<any>;
+    [SubK: string]: PromptTemplate<TemplateFormat>;
   };
 };
 
@@ -30,7 +31,7 @@ export type SubTemplateType<T extends TemplateType> = keyof typeof templateRegis
 export interface GeneratePromptOptions<T extends TemplateType> {
   type: T;
   subType: SubTemplateType<T>;
-  values: any; // Type will be inferred from the template
+  values: ExtractTemplateValues<(typeof templateRegistry)[T][SubTemplateType<T>]>;
 }
 
 export function generatePrompt<T extends TemplateType>({ 

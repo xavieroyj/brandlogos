@@ -1,7 +1,8 @@
 "use client";
 
-import { Card } from "./ui/card";
-import { Skeleton } from "./ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import Image from 'next/image'
 
 interface IconDisplayProps {
   icons?: string[];
@@ -46,7 +47,7 @@ export function IconDisplay({
           }`}
           onClick={() => onSelect?.(index)}
         >
-          <img
+          <Image
             src={`data:image/png;base64,${icon}`}
             alt={`Generated icon ${index + 1}`}
             className="w-full h-full object-contain rounded-lg"
