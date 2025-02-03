@@ -22,3 +22,15 @@ BrandLogos is a Next.js application designed to help startups generate professio
 - System processes input through text generation model for ideation
 - Text output is used to generate visual logo options
 - User can view and select from generated logos
+- User can download selected logos as a zip package containing:
+  - Original logo file
+  - Ready-to-use favicon package in standard sizes
+  - Web-optimized versions
+
+## Asset Generation
+- **Favicon Package**
+  - Standard sizes: 16x16, 32x32, 48x48, 64x64, 128x128, 256x256
+  - ICO format for wide browser compatibility
+  - PNG format for modern web usage
+  - Web manifest sizes (192x192, 512x512)
+  - Apple touch icon sizes

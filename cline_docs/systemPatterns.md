@@ -25,16 +25,24 @@
    - Text generation for concept development
    - Image generation for visual output
 
-2. **State Management**
+2. **Asset Generation Pipeline**
+   - Favicon generation in multiple sizes
+   - ZIP file packaging system
+   - Client-side download handling
+
+3. **State Management**
    - Form state handling
    - Generation process state
    - Display state management
+   - Download state handling
 
-3. **Directory Structure**
+4. **Directory Structure**
    ```
    app/ - Next.js app router pages
    components/ - React components
    lib/ - Core utilities
+     /download/ - Download utilities
+     /favicon/ - Favicon generation
    hooks/ - Custom React hooks
    ```
 

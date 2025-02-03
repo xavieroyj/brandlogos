@@ -43,6 +43,7 @@ export const iconTemplates = {
       "- Color palette with rationale",
       "- Key visual elements and their significance",
       "DO NOT include any of your thoughts such as 'I think' or 'I believe'.",
+      "DO NOT USE any existing brand name or trademarked elements in your design."
     ].join('\n'),
     {
       brandName: { type: "string", required: true, description: "Brand name (max 50 chars)" },
