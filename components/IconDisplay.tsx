@@ -50,6 +50,8 @@ export function IconDisplay({
           <Image
             src={`data:image/png;base64,${icon}`}
             alt={`Generated icon ${index + 1}`}
+            width={1024}
+            height={1024}
             className="w-full h-full object-contain rounded-lg"
           />
         </Card>

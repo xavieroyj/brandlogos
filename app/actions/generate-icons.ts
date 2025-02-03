@@ -18,7 +18,6 @@ export async function generateIcons(data: BrandFormValues) {
       style: data.style,
       styleGuide
     });
-    console.log("Template Prompt:", templatePrompt);
 
     // Generate using the enhanced prompt
     const { text: enhancedPrompt } = await generateText({
@@ -26,7 +25,7 @@ export async function generateIcons(data: BrandFormValues) {
       prompt: templatePrompt
     });
     const iconTextPrompt = removeThinkTags(enhancedPrompt);
-
+    console.log("AI Generated prompt:", iconTextPrompt);
     // Step 2: Generate 4 icons using the image model
     const { images } = await generateImage({
       model: imageModel,
