@@ -8,6 +8,20 @@ type IconPromptFormat = {
 };
 
 export const iconTemplates = {
+  generateIconPrompt: new PromptTemplate<IconPromptFormat>(
+    "Create a detailed brand icon based on the following information: {brandName} is a brand that {description}.   " +
+    "The key themes to incorporate are: {tags}. " +
+    "The icon should follow a {style} design approach. " +
+    "Include specific visual details about colors, shapes, style, and composition to create a professional and distinctive brand icon. " +
+    "The design should be clean, memorable, and effectively represent the brand's identity while being recognizable at different sizes.",
+    {
+      brandName: { type: "string", required: true, description: "Name of the brand" },
+      description: { type: "string", required: true, description: "Description of what the brand does" },
+      tags: { type: "string[]", required: true, description: "Key themes and focus areas" },
+      style: { type: "string", required: true, description: "Style of the icon" }
+    }
+  ),
+
   anime: new PromptTemplate<IconPromptFormat>(
     "Create an anime-style icon for a brand called {brandName}. " +
     "The brand focuses on {description}. " +

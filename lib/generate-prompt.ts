@@ -50,32 +50,3 @@ export function generatePrompt<T extends TemplateType>({
 
   return template.formatTemplate(values);
 }
-
-// Example usage:
-// Icon template:
-// const iconPrompt = generatePrompt({
-//   type: "icon",
-//   subType: "minimalist",
-//   values: {
-//     brandName: "TechCo",
-//     description: "A software development company",
-//     tags: ["technology", "innovation"],
-//     style: "minimalist"
-//   }
-// });
-
-// Fruit template:
-// const fruitPrompt = generatePrompt({
-//   type: "fruit",
-//   subType: "describe",
-//   values: {
-//     fruit: "apple",
-//     color: "red",
-//     quantity: 5
-//   }
-// });
-
-// Adding new templates is as simple as:
-// 1. Create a new template file with your templates
-// 2. Add them to the templateRegistry
-// 3. Use them with generatePrompt
