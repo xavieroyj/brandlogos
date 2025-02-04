@@ -1,5 +1,5 @@
-import { PromptTemplate } from "../prompt-template";
-import { type IconStyle } from "../styles";
+import { PromptTemplate } from "@/lib/prompt/prompt-template";
+import { type IconStyle } from "@/lib/styles";
 
 // Style-specific guidance for each icon style
 const styleGuides: Record<IconStyle, string> = {

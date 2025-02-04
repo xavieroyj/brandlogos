@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import NavHeader from "@/components/shared/NavHeader";
+import Footer from "@/components/shared/Footer";
+import { Toaster } from "@/components/ui/toaster"
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -41,8 +44,17 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="BrandLogos" />
       </head>
 
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased min-h-screen bg-background text-foreground`}>
+        <NavHeader/>
+
+        {/* Account for the nav height */}
+        <main className="pt-16">
+          {children}
+        </main>
+
+        <Footer />
+
+        <Toaster />
       </body>
     </html>
   );

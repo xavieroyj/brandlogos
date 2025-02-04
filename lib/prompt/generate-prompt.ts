@@ -1,4 +1,4 @@
-import { PromptTemplate, type TemplateFormat } from "@/lib/prompt-template";
+import { PromptTemplate, type TemplateFormat } from "@/lib/prompt/prompt-template";
 import { iconTemplates } from "./templates/icon-templates";
 
 // Generic type for any template values
