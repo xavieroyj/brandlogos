@@ -21,6 +21,7 @@ model User {
   subscriptions Subscription[]
   Credit        Credit?
   generatedImages GeneratedImage[]
+  generationSessions GenerationSession[]
 
   @@map("user")
 }
@@ -48,7 +49,7 @@ model Account {
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
-  idToken               String?
+  idToken              String?
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
   scope                 String?
@@ -83,20 +84,34 @@ model Credit {
   updatedAt      DateTime         @updatedAt
 }
 
-model GeneratedImage {
-  id          String    @id @default(cuid())
+model GenerationSession {
+  id          String           @id @default(cuid())
   userId      String
-  user        User      @relation(fields: [userId], references: [id])
-  prompt      String    @db.Text
-  s3Key       String    // The key in S3 bucket
-  s3Url       String    // The public URL
+  user        User             @relation(fields: [userId], references: [id])
+  prompt      String           @db.Text
   style       String
   brandName   String
   tags        String[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  images      GeneratedImage[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   @@index([userId])
+}
+
+model GeneratedImage {
+  id                String            @id @default(cuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id])
+  sessionId        String
+  session          GenerationSession @relation(fields: [sessionId], references: [id])
+  s3Key            String            // The key in S3 bucket
+  s3Url            String            // The public URL
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([userId])
+  @@index([sessionId])
 }
 
 model Subscription {

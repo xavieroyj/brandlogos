@@ -42,18 +42,22 @@ export async function GET(
         });
 
         if (!userCredit) {
-            // Create initial credits for new users
-            const newCredit = await prisma.credit.create({
-                data: {
+            // Create or update credits for users
+            const newCredit = await prisma.credit.upsert({
+                where: {
+                    userId: params.userId,
+                },
+                create: {
                     userId: params.userId,
                     tier: "FREE",
                     monthlyCredits: 500,
                     dailyCredits: 5,
                     usedCredits: 0,
                     resetDate: new Date(),
-                }
+                },
+                update: {} // If it exists, don't update anything
             });
-            
+
             return NextResponse.json({
                 total: newCredit.dailyCredits,
                 used: newCredit.usedCredits,
@@ -79,4 +83,4 @@ export async function GET(
         console.error("[CREDITS_GET]", error);
         return new NextResponse("Internal Error", { status: 500 });
     }
-} 
+}

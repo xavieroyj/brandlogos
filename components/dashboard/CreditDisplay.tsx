@@ -3,7 +3,8 @@
 import { Sparkles, RefreshCcw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useState } from "react";
+import { getUserCredits } from "@/app/actions/manage-credits";
 import { formatDistanceToNow } from "date-fns";
 
 interface CreditDisplayProps {
@@ -16,7 +17,7 @@ interface UserCredits {
     remaining: number;
     resetDate: string;
     tier: keyof typeof TIER_COLORS;
-    monthlyCredits: number;
+    monthlyCredits: number | null;
     subscription: {
         status: string;
         currentPeriodEnd: string;
@@ -34,27 +35,23 @@ export function CreditDisplay({ userId }: CreditDisplayProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchCredits = useCallback(async () => {
+    async function fetchCredits() {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch(`/api/users/${userId}/credits`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch credits');
-            }
-            const data = await response.json();
+            const data = await getUserCredits(userId);
             setCredits(data);
         } catch (error) {
             console.error('Failed to fetch credits:', error);
-            setError('Failed to load credits');
+            setError(error instanceof Error ? error.message : 'Failed to load credits');
         } finally {
             setIsLoading(false);
         }
-    }, [userId]);
+    }
 
     useEffect(() => {
         fetchCredits();
-    }, [fetchCredits]);
+    }, [userId]);
 
     if (error) {
         return (
@@ -73,13 +70,13 @@ export function CreditDisplay({ userId }: CreditDisplayProps) {
                     <CardTitle className="text-lg font-medium">Credits Balance</CardTitle>
                     {credits && (
                         <span className={`text-sm ${TIER_COLORS[credits.tier]}`}>
-                            {credits.tier === 'FREE' ? 'Free Plan' : 
-                             credits.tier === 'PRO' ? 'Pro Plan' : 'Enterprise Plan'}
+                            {credits.tier === 'FREE' ? 'Free Plan' :
+                                credits.tier === 'PRO' ? 'Pro Plan' : 'Enterprise Plan'}
                         </span>
                     )}
                 </div>
-                <Button 
-                    variant="ghost" 
+                <Button
+                    variant="ghost"
                     size="icon"
                     onClick={() => fetchCredits()}
                     disabled={isLoading}
@@ -102,13 +99,13 @@ export function CreditDisplay({ userId }: CreditDisplayProps) {
                         </p>
                     </div>
                 </div>
-                
+
                 {/* Progress bar */}
                 <div className="mt-4 space-y-2">
                     <div className="h-2 w-full bg-purple-500/10 rounded-full overflow-hidden">
-                        <div 
+                        <div
                             className="h-full bg-purple-500 transition-all duration-500 ease-in-out"
-                            style={{ 
+                            style={{
                                 width: `${isLoading || !credits ? 0 : (credits.used / credits.total * 100)}%`
                             }}
                         />
@@ -125,7 +122,7 @@ export function CreditDisplay({ userId }: CreditDisplayProps) {
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-gray-400">Monthly credits:</span>
                             <span className="text-white font-medium">
-                                {credits.monthlyCredits.toLocaleString()}
+                                {credits.monthlyCredits?.toLocaleString() ?? 0}
                             </span>
                         </div>
                         {credits.subscription && (
@@ -147,4 +144,4 @@ export function CreditDisplay({ userId }: CreditDisplayProps) {
             </CardContent>
         </Card>
     );
-} 
+}

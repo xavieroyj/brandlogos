@@ -1,31 +1,28 @@
-import { NextResponse } from "next/server";
+"use server";
+
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(
-    request: Request,
-    { params }: { params: { userId: string } }
-) {
+export async function getUserImages(userId: string) {
     try {
-        // Verify authentication
         const session = await auth.api.getSession({
-            headers: headers(),
+            headers: headers()
         });
 
-        if (!session) {
-            return new NextResponse("Unauthorized", { status: 401 });
+        if (!session?.user) {
+            throw new Error("Unauthorized");
         }
 
         // Ensure user can only access their own images
-        if (session.user.id !== params.userId) {
-            return new NextResponse("Forbidden", { status: 403 });
+        if (session?.user.id !== userId) {
+            throw new Error("Forbidden");
         }
 
         // Fetch user's generation sessions with their images
         const sessions = await prisma.generationSession.findMany({
             where: {
-                userId: params.userId,
+                userId: userId,
             },
             orderBy: {
                 createdAt: 'desc'
@@ -42,7 +39,7 @@ export async function GET(
         });
 
         // Transform the data to match the frontend interface
-        const transformedSessions = sessions.map(session => ({
+        return sessions.map(session => ({
             id: session.id,
             brandName: session.brandName,
             style: session.style,
@@ -56,10 +53,8 @@ export async function GET(
             }))
         }));
 
-        return NextResponse.json(transformedSessions);
-
     } catch (error) {
         console.error("[GET_USER_IMAGES]", error);
-        return new NextResponse("Internal Server Error", { status: 500 });
+        throw error;
     }
 }

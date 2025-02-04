@@ -10,6 +10,7 @@ import { headers } from "next/headers";
 import { uploadToS3 } from "@/lib/storage/s3-client";
 import { prisma } from "@/lib/prisma";
 import { nanoid } from 'nanoid';
+import { deductCredits } from "./manage-credits";
 
 interface GenerateIconsResponse {
     success: boolean;
@@ -33,24 +34,6 @@ export async function generateIcons(data: BrandFormValues): Promise<GenerateIcon
                 error: "You must be logged in to generate icons"
             };
         }
-
-        // Try to deduct credits first
-        const deductResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/users/${session.user.id}/credits/deduct`, {
-            method: 'POST',
-            headers: {
-                'Cookie': headers().get('cookie') || ''
-            }
-        });
-
-        if (!deductResponse.ok) {
-            const error = await deductResponse.text();
-            return {
-                success: false,
-                error: error || "Failed to deduct credits"
-            };
-        }
-
-        const creditData = await deductResponse.json();
 
         // Step 1: Use text model with template to generate an enhanced prompt
         const styleGuide = getStyleGuide(data.style);
@@ -82,7 +65,7 @@ export async function generateIcons(data: BrandFormValues): Promise<GenerateIcon
         const storedImages = await Promise.all(
             images.map(async (img) => {
                 // Clean the base64 string
-                const base64Data = img.base64.includes('data:image') 
+                const base64Data = img.base64.includes('data:image')
                     ? img.base64.replace(/^data:image\/\w+;base64,/, '')
                     : img.base64;
 
@@ -93,34 +76,60 @@ export async function generateIcons(data: BrandFormValues): Promise<GenerateIcon
                 // Upload to S3
                 const s3Url = await uploadToS3(base64Data, s3Key);
 
-                // Store in database
-                const storedImage = await prisma.generatedImage.create({
-                    data: {
-                        userId: session.user.id,
-                        prompt: iconTextPrompt,
-                        s3Key,
-                        s3Url,
-                        style: data.style,
-                        brandName: data.brandName,
-                        tags: data.tags
-                    }
-                });
-
                 return {
-                    url: s3Url,
-                    id: storedImage.id,
+                    s3Key,
+                    s3Url,
                     base64: base64Data // Include base64 for immediate display
                 };
             })
         );
 
+        // Create a generation session
+        const generationSession = await prisma.generationSession.create({
+            data: {
+                userId: session.user.id,
+                prompt: iconTextPrompt,
+                style: data.style,
+                brandName: data.brandName,
+                tags: data.tags,
+                images: {
+                    create: storedImages.map(img => ({
+                        userId: session.user.id,
+                        s3Key: img.s3Key,
+                        s3Url: img.s3Url
+                    }))
+                }
+            },
+            include: {
+                images: true
+            }
+        });
+
+        // Deduct credits only after successful generation
+        let creditsRemaining: number;
+        try {
+            const creditData = await deductCredits(session.user.id);
+            creditsRemaining = creditData.remaining;
+        } catch (error) {
+            // Even if credit deduction fails, we return the generated images
+            console.error("[DEDUCT_CREDITS]", error);
+            return {
+                success: true,
+                images: generationSession.images.map(img => ({
+                    url: img.s3Url,
+                    id: img.id
+                })),
+                error: error instanceof Error ? error.message : "Failed to deduct credits"
+            };
+        }
+
         return {
             success: true,
-            images: storedImages.map(img => ({
-                url: img.url,
+            images: generationSession.images.map(img => ({
+                url: img.s3Url,
                 id: img.id
             })),
-            creditsRemaining: creditData.remaining
+            creditsRemaining
         };
 
     } catch (error) {

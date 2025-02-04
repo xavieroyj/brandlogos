@@ -1,18 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
+import { getUserImages } from "@/app/actions/get-user-images";
 
 interface GeneratedImage {
   id: string;
   url: string;
+  createdAt: string;
+}
+
+interface GenerationSession {
+  id: string;
   brandName: string;
   style: string;
+  prompt: string;
+  tags: string[];
   createdAt: string;
+  images: GeneratedImage[];
 }
 
 interface GeneratedImagesProps {
@@ -20,31 +29,27 @@ interface GeneratedImagesProps {
 }
 
 export function GeneratedImages({ userId }: GeneratedImagesProps) {
-  const [images, setImages] = useState<GeneratedImage[]>([]);
+  const [sessions, setSessions] = useState<GenerationSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchImages = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/users/${userId}/images`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch images');
-      }
-      const data = await response.json();
-      setImages(data);
-    } catch (error) {
-      console.error('Failed to fetch images:', error);
-      setError('Failed to load images');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userId]);
-
   useEffect(() => {
-    fetchImages();
-  }, [fetchImages]);
+    async function loadImages() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await getUserImages(userId);
+        setSessions(data);
+      } catch (error) {
+        console.error('Failed to fetch images:', error);
+        setError('Failed to load images');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadImages();
+  }, [userId]);
 
   const handleDownload = async (url: string, brandName: string) => {
     try {
@@ -83,43 +88,65 @@ export function GeneratedImages({ userId }: GeneratedImagesProps) {
           <div className="flex justify-center items-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
           </div>
-        ) : images.length === 0 ? (
+        ) : sessions.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
             No images generated yet. Try creating some logos!
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {images.map((image) => (
-              <div key={image.id} className="group relative">
-                <div className="aspect-square relative overflow-hidden rounded-lg bg-gray-900/50">
-                  <Image
-                    src={image.url}
-                    alt={`${image.brandName} logo`}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDownload(image.url, image.brandName)}
-                      className="text-white hover:text-purple-400"
-                    >
-                      <Download className="h-5 w-5" />
-                    </Button>
+          <div className="space-y-8">
+            {sessions.map((session) => (
+              <Card key={session.id} className="bg-black/30 border-purple-500/10">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div>
+                      <span className="text-lg font-medium">{session.brandName}</span>
+                      <span className="ml-2 text-sm text-gray-400">
+                        {formatDistanceToNow(new Date(session.createdAt), { addSuffix: true })}
+                      </span>
+                    </div>
+                  </CardTitle>
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-400">{session.prompt}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {session.tags.map((tag) => (
+                        <span key={tag} className="text-xs bg-purple-500/10 text-purple-300 px-2 py-1 rounded">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-                <div className="mt-2 space-y-1">
-                  <p className="text-sm font-medium text-white truncate">{image.brandName}</p>
-                  <p className="text-xs text-gray-400">
-                    {formatDistanceToNow(new Date(image.createdAt), { addSuffix: true })}
-                  </p>
-                </div>
-              </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {session.images.map((image) => (
+                      <div key={image.id} className="group relative">
+                        <div className="aspect-square relative overflow-hidden rounded-lg bg-gray-900/50">
+                          <Image
+                            src={image.url}
+                            alt={`${session.brandName} logo`}
+                            fill
+                            className="object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDownload(image.url, session.brandName)}
+                              className="text-white hover:text-purple-400"
+                            >
+                              <Download className="h-5 w-5" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
       </CardContent>
     </Card>
   );
-} 
+}
