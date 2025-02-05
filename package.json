@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:r2": "tsx scripts/test-r2.ts"
+    "test:r2": "tsx scripts/test-r2.ts",
+    "setup:stripe": "tsx scripts/setup-stripe.ts"
   },
   "dependencies": {
     "@ai-sdk/fal": "^0.0.2",
@@ -54,6 +55,7 @@
     "input-otp": "^1.4.2",
     "jszip": "^3.10.1",
     "lucide-react": "^0.474.0",
+    "micro": "^10.0.1",
     "motion": "^12.0.11",
     "nanoid": "^5.0.9",
     "next": "14.2.23",
@@ -67,6 +69,7 @@
     "react-resizable-panels": "^2.1.7",
     "recharts": "^2.15.1",
     "sonner": "^1.7.4",
+    "stripe": "^17.6.0",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
@@ -81,6 +84,7 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
     "typescript": "^5"
   }
 }

@@ -70,7 +70,7 @@ export async function getUserCredits(userId: string): Promise<CreditResponse> {
                 monthlyCredits: 500,
                 dailyCredits: 5,
                 usedCredits: 0,
-                resetDate: new Date(),
+                resetDate: new Date(new Date().setHours(23, 59, 59, 999)),
             },
             select: {
                 dailyCredits: true,
@@ -140,10 +140,16 @@ export async function deductCredits(userId: string): Promise<{ remaining: number
                 throw new Error("No credits found");
             }
 
-            // Check if credits need to be reset
+            // Check if credits need to be reset by comparing dates without time
             const now = new Date();
-            const shouldReset = userCredit.resetDate < now;
+            const resetDate = new Date(userCredit.resetDate);
+            const shouldReset = resetDate.setHours(0,0,0,0) < now.setHours(0,0,0,0);
             const currentUsedCredits = shouldReset ? 0 : userCredit.usedCredits;
+
+            // If resetting, set the next reset date to the end of the current day
+            const newResetDate = shouldReset ?
+                new Date(new Date().setHours(23, 59, 59, 999)) :
+                userCredit.resetDate;
 
             if (!shouldReset && userCredit.dailyCredits <= currentUsedCredits) {
                 throw new Error("No credits remaining");
@@ -154,7 +160,7 @@ export async function deductCredits(userId: string): Promise<{ remaining: number
                 where: { userId },
                 data: {
                     usedCredits: currentUsedCredits + 1,
-                    resetDate: shouldReset ? now : userCredit.resetDate
+                    resetDate: newResetDate
                 },
                 select: {
                     dailyCredits: true,

@@ -13,23 +13,41 @@ export async function POST() {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
-        // Reset all users' daily credits
+        // Reset all users' daily credits based on their tier
         const now = new Date();
-        const yesterday = new Date(now);
-        yesterday.setDate(yesterday.getDate() - 1);
+        const startOfToday = new Date(now.setHours(0, 0, 0, 0));
 
-        // Update all credits that haven't been reset today
-        const result = await prisma.credit.updateMany({
+        // Get all credits that need reset
+        const creditsToReset = await prisma.credit.findMany({
             where: {
                 resetDate: {
-                    lt: new Date(now.setHours(0, 0, 0, 0)) // Start of today
+                    lt: startOfToday
                 }
             },
-            data: {
-                usedCredits: 0,
-                resetDate: now
+            select: {
+                id: true,
+                userId: true,
+                tier: true
             }
         });
+
+        // Update each user's credits based on their tier
+        const updates = await Promise.all(
+            creditsToReset.map(credit =>
+                prisma.credit.update({
+                    where: { id: credit.id },
+                    data: {
+                        usedCredits: 0,
+                        resetDate: now,
+                        // Keep existing tier and dailyCredits
+                    }
+                })
+            )
+        );
+
+        const result = {
+            count: updates.length
+        };
 
         return NextResponse.json({
             success: true,

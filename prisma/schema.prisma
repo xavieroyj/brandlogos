@@ -118,18 +118,20 @@ model GeneratedImage {
 }
 
 model Subscription {
-  id               String   @id @default(cuid())
-  userId           String
-  user             User     @relation(fields: [userId], references: [id])
-  status           String
-  priceId          String
-  currentPeriodEnd DateTime
-  billingCycle     String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  stripeSubscriptionId String   @unique
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id])
+  status               String
+  priceId              String
+  currentPeriodEnd     DateTime
+  billingCycle         String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@unique([id, priceId])
   @@index([userId])
+  @@index([stripeSubscriptionId])
 }
 
 enum SubscriptionTier {
