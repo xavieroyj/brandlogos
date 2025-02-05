@@ -39,29 +39,44 @@ export async function verifyStripeWebhook(payload: string | Buffer, signature: s
 export async function updateUserCredits(userId: string, tier: 'FREE' | 'PRO' | 'ENTERPRISE') {
   try {
     console.log('[UPDATE_CREDITS] Updating credits for user:', userId, 'to tier:', tier);
-    
+
     // Get the credit limit for the tier
     const dailyCredits = CREDIT_LIMITS[tier];
     const monthlyCredits = tier === 'FREE' ? 500 : tier === 'PRO' ? 1000 : 2000;
 
-    // Update or create user's credit allocation
-    const result = await prisma.credit.upsert({
-      where: { userId },
-      create: {
-        userId,
-        tier,
-        dailyCredits,
-        monthlyCredits,
-        usedCredits: 0,
-        resetDate: new Date(new Date().setHours(23, 59, 59, 999))
-      },
-      update: {
-        tier,
-        dailyCredits,
-        monthlyCredits,
-        usedCredits: 0, // Reset credits on tier change
-        resetDate: new Date(new Date().setHours(23, 59, 59, 999))
-      }
+    // Use transaction to ensure atomic updates
+    const result = await prisma.$transaction(async (tx) => {
+      const updatedCredit = await tx.credit.upsert({
+        where: { userId },
+        create: {
+          userId,
+          tier,
+          dailyCredits,
+          monthlyCredits,
+          usedCredits: 0,
+          resetDate: new Date(new Date().setHours(23, 59, 59, 999)),
+          updateStatus: 'COMPLETED'
+        },
+        update: {
+          tier,
+          dailyCredits,
+          monthlyCredits,
+          usedCredits: 0, // Reset credits on tier change
+          resetDate: new Date(new Date().setHours(23, 59, 59, 999)),
+          updateStatus: 'COMPLETED'
+        }
+      });
+
+      // Log the update
+      await tx.creditUpdateLog.create({
+        data: {
+          creditId: updatedCredit.id,
+          tier,
+          status: 'COMPLETED'
+        }
+      });
+
+      return updatedCredit;
     });
 
     console.log('[UPDATE_CREDITS] Successfully updated credits:', {
@@ -70,10 +85,24 @@ export async function updateUserCredits(userId: string, tier: 'FREE' | 'PRO' | '
       dailyCredits,
       monthlyCredits,
       usedCredits: result.usedCredits,
-      resetDate: result.resetDate
+      resetDate: result.resetDate,
+      status: result.updateStatus
     });
+
+    return result;
   } catch (err) {
     console.error('[STRIPE_UPDATE_CREDITS] Error:', err);
+
+    // Update status to FAILED if credit record exists
+    try {
+      await prisma.credit.update({
+        where: { userId },
+        data: { updateStatus: 'FAILED' }
+      });
+    } catch (updateErr) {
+      console.error('[STRIPE_UPDATE_CREDITS] Failed to update status:', updateErr);
+    }
+
     throw err;
   }
 }

@@ -1,6 +1,12 @@
 {
-    "crons": [{
-        "path": "/api/cron/reset-credits",
-        "schedule": "0 0 * * *"
-    }]
-} 
+    "crons": [
+        {
+            "path": "/api/cron/reset-credits",
+            "schedule": "0 0 * * *"
+        },
+        {
+            "path": "/api/cron/retry-credit-updates",
+            "schedule": "*/30 * * * *"
+        }
+    ]
+}

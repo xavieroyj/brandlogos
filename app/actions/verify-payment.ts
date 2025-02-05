@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import stripeClient from '@/lib/stripe';
+import stripeClient, { updateUserCredits } from '@/lib/stripe';
 
 export async function verifyPayment(sessionId: string) {
   try {
@@ -32,9 +32,23 @@ export async function verifyPayment(sessionId: string) {
       throw new Error('Session does not belong to current user');
     }
 
+    const isPaid = checkoutSession.payment_status === 'paid';
+    const tier = checkoutSession.metadata?.tier as 'FREE' | 'PRO' | 'ENTERPRISE';
+
+    // If payment is successful, update credits immediately
+    if (isPaid && tier) {
+      try {
+        await updateUserCredits(session.user.id, tier);
+        console.log('[VERIFY_PAYMENT] Credits updated for user:', session.user.id, 'tier:', tier);
+      } catch (updateError) {
+        console.error('[VERIFY_PAYMENT] Failed to update credits:', updateError);
+        // Continue even if credit update fails, as webhook will retry
+      }
+    }
+
     return {
-      success: checkoutSession.payment_status === 'paid',
-      tier: checkoutSession.metadata?.tier,
+      success: isPaid,
+      tier: tier,
       status: checkoutSession.status
     };
   } catch (error) {

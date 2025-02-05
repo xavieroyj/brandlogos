@@ -8,19 +8,19 @@ generator client {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  name          String?
-  emailVerified Boolean
-  image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
-  sessions      Session[]
-  accounts      Account[]
-  customerId    String?        @unique
-  subscriptions Subscription[]
-  Credit        Credit?
-  generatedImages GeneratedImage[]
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  name               String?
+  emailVerified      Boolean
+  image              String?
+  createdAt          DateTime
+  updatedAt          DateTime
+  sessions           Session[]
+  accounts           Account[]
+  customerId         String?             @unique
+  subscriptions      Subscription[]
+  Credit             Credit?
+  generatedImages    GeneratedImage[]
   generationSessions GenerationSession[]
 
   @@map("user")
@@ -49,7 +49,7 @@ model Account {
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
-  idToken              String?
+  idToken               String?
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
   scope                 String?
@@ -72,46 +72,59 @@ model Verification {
 }
 
 model Credit {
-  id             String           @id @default(cuid())
-  userId         String           @unique
-  user           User             @relation(fields: [userId], references: [id])
-  tier           SubscriptionTier @default(FREE)
-  monthlyCredits Int?             @default(500)
-  dailyCredits   Int              @default(5)
-  usedCredits    Int              @default(0)
+  id             String            @id @default(cuid())
+  userId         String            @unique
+  user           User              @relation(fields: [userId], references: [id])
+  tier           SubscriptionTier  @default(FREE)
+  monthlyCredits Int?              @default(500)
+  dailyCredits   Int               @default(5)
+  usedCredits    Int               @default(0)
   resetDate      DateTime
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  updateStatus   String            @default("COMPLETED")
+  logs           CreditUpdateLog[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
   @@index([userId, resetDate])
 }
 
+model CreditUpdateLog {
+  id        String   @id @default(cuid())
+  creditId  String
+  credit    Credit   @relation(fields: [creditId], references: [id])
+  tier      String
+  status    String
+  createdAt DateTime @default(now())
+
+  @@index([creditId])
+}
+
 model GenerationSession {
-  id          String           @id @default(cuid())
-  userId      String
-  user        User             @relation(fields: [userId], references: [id])
-  prompt      String           @db.Text
-  style       String
-  brandName   String
-  tags        String[]
-  images      GeneratedImage[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  prompt    String           @db.Text
+  style     String
+  brandName String
+  tags      String[]
+  images    GeneratedImage[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 
   @@index([userId])
   @@index([userId, createdAt])
 }
 
 model GeneratedImage {
-  id                String            @id @default(cuid())
-  userId           String
-  user             User              @relation(fields: [userId], references: [id])
-  sessionId        String
-  session          GenerationSession @relation(fields: [sessionId], references: [id])
-  s3Key            String            // The key in S3 bucket
-  s3Url            String            // The public URL
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id])
+  sessionId String
+  session   GenerationSession @relation(fields: [sessionId], references: [id])
+  s3Key     String // The key in S3 bucket
+  s3Url     String // The public URL
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
   @@index([userId])
   @@index([sessionId])
