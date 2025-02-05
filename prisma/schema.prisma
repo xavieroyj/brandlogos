@@ -82,6 +82,8 @@ model Credit {
   resetDate      DateTime
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+
+  @@index([userId, resetDate])
 }
 
 model GenerationSession {
@@ -97,6 +99,7 @@ model GenerationSession {
   updatedAt   DateTime         @updatedAt
 
   @@index([userId])
+  @@index([userId, createdAt])
 }
 
 model GeneratedImage {

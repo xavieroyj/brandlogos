@@ -7,6 +7,7 @@ import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { getUserImages } from "@/app/actions/get-user-images";
+import { useInView } from "react-intersection-observer";
 
 interface GeneratedImage {
   id: string;
@@ -24,6 +25,14 @@ interface GenerationSession {
   images: GeneratedImage[];
 }
 
+interface PaginatedResponse {
+  sessions: GenerationSession[];
+  pagination: {
+    nextCursor?: string;
+    total?: number;
+  };
+}
+
 interface GeneratedImagesProps {
   userId: string;
 }
@@ -32,24 +41,45 @@ export function GeneratedImages({ userId }: GeneratedImagesProps) {
   const [sessions, setSessions] = useState<GenerationSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | undefined>();
+  const [hasMore, setHasMore] = useState(true);
+  const { ref: loadMoreRef, inView } = useInView();
 
-  useEffect(() => {
-    async function loadImages() {
-      setIsLoading(true);
+  const loadImages = async (cursor?: string) => {
+    try {
       setError(null);
-      try {
-        const data = await getUserImages(userId);
-        setSessions(data);
-      } catch (error) {
-        console.error('Failed to fetch images:', error);
-        setError('Failed to load images');
-      } finally {
-        setIsLoading(false);
+      const data = await getUserImages(userId, { cursor, limit: 10 });
+      
+      if (cursor) {
+        // Append new sessions
+        setSessions(prev => [...prev, ...data.sessions]);
+      } else {
+        // Reset sessions on initial load
+        setSessions(data.sessions);
       }
+      
+      setNextCursor(data.pagination.nextCursor);
+      setHasMore(!!data.pagination.nextCursor);
+    } catch (error) {
+      console.error('Failed to fetch images:', error);
+      setError('Failed to load images');
+    } finally {
+      setIsLoading(false);
     }
+  };
 
+  // Initial load
+  useEffect(() => {
+    setIsLoading(true);
     loadImages();
   }, [userId]);
+
+  // Load more when scrolling to the bottom
+  useEffect(() => {
+    if (inView && hasMore && !isLoading) {
+      loadImages(nextCursor);
+    }
+  }, [inView, hasMore, isLoading, nextCursor]);
 
   const handleDownload = async (url: string, brandName: string) => {
     try {
@@ -84,7 +114,7 @@ export function GeneratedImages({ userId }: GeneratedImagesProps) {
         <CardTitle className="text-lg font-medium">Generated Images</CardTitle>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {isLoading && sessions.length === 0 ? (
           <div className="flex justify-center items-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
           </div>
@@ -144,6 +174,13 @@ export function GeneratedImages({ userId }: GeneratedImagesProps) {
                 </CardContent>
               </Card>
             ))}
+            
+            {/* Load more trigger */}
+            {hasMore && (
+              <div ref={loadMoreRef} className="flex justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-purple-500" />
+              </div>
+            )}
           </div>
         )}
       </CardContent>

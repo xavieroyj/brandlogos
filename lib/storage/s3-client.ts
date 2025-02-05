@@ -30,4 +30,4 @@ export async function uploadToS3(
 
     // Return the public URL
     return `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`;
-} 
+}

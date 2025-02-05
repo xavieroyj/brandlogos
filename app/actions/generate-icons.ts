@@ -57,7 +57,7 @@ export async function generateIcons(data: BrandFormValues): Promise<GenerateIcon
         const { images } = await generateImage({
             model: imageModel,
             prompt: iconTextPrompt,
-            n: 4, // Generate 4 images
+            n: 1, // Generate 4 images
             size: "1024x1024", // Square format for icons
         });
 
@@ -75,6 +75,7 @@ export async function generateIcons(data: BrandFormValues): Promise<GenerateIcon
 
                 // Upload to S3
                 const s3Url = await uploadToS3(base64Data, s3Key);
+                console.log("S3 URL:", s3Url);
 
                 return {
                     s3Key,

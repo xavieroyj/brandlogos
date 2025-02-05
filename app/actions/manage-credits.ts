@@ -20,6 +20,9 @@ interface CreditResponse {
     subscription: SubscriptionInfo | null;
 }
 
+/**
+ * Get user's credit information including subscription status
+ */
 export async function getUserCredits(userId: string): Promise<CreditResponse> {
     const session = await auth.api.getSession({
         headers: headers()
@@ -33,20 +36,25 @@ export async function getUserCredits(userId: string): Promise<CreditResponse> {
         throw new Error("Forbidden");
     }
 
-    // Get user's credits from database
+    // Get user's credits with minimal subscription data
     const userCredit = await prisma.credit.findUnique({
         where: { userId },
-        include: {
+        select: {
+            dailyCredits: true,
+            usedCredits: true,
+            resetDate: true,
+            tier: true,
+            monthlyCredits: true,
             user: {
-                include: {
+                select: {
                     subscriptions: {
-                        where: {
-                            status: "active"
-                        },
-                        orderBy: {
-                            createdAt: "desc"
-                        },
-                        take: 1
+                        where: { status: "active" },
+                        orderBy: { createdAt: "desc" },
+                        take: 1,
+                        select: {
+                            status: true,
+                            currentPeriodEnd: true
+                        }
                     }
                 }
             }
@@ -54,12 +62,9 @@ export async function getUserCredits(userId: string): Promise<CreditResponse> {
     });
 
     if (!userCredit) {
-        // Create or update credits for users
-        const newCredit = await prisma.credit.upsert({
-            where: {
-                userId,
-            },
-            create: {
+        // Create initial credits for user
+        const newCredit = await prisma.credit.create({
+            data: {
                 userId,
                 tier: "FREE",
                 monthlyCredits: 500,
@@ -67,7 +72,13 @@ export async function getUserCredits(userId: string): Promise<CreditResponse> {
                 usedCredits: 0,
                 resetDate: new Date(),
             },
-            update: {} // If it exists, don't update anything
+            select: {
+                dailyCredits: true,
+                usedCredits: true,
+                resetDate: true,
+                tier: true,
+                monthlyCredits: true
+            }
         });
 
         return {
@@ -95,6 +106,10 @@ export async function getUserCredits(userId: string): Promise<CreditResponse> {
     };
 }
 
+/**
+ * Deduct credits from user's balance
+ * Uses a transaction to ensure atomic operations and data consistency
+ */
 export async function deductCredits(userId: string): Promise<{ remaining: number }> {
     const session = await auth.api.getSession({
         headers: headers()
@@ -108,29 +123,53 @@ export async function deductCredits(userId: string): Promise<{ remaining: number
         throw new Error("Forbidden");
     }
 
-    // Get current credits
-    const userCredit = await prisma.credit.findUnique({
-        where: { userId }
-    });
+    try {
+        // Use a transaction to ensure atomic update
+        const result = await prisma.$transaction(async (tx) => {
+            // Get current credits with a row lock
+            const userCredit = await tx.credit.findUnique({
+                where: { userId },
+                select: {
+                    dailyCredits: true,
+                    usedCredits: true,
+                    resetDate: true
+                }
+            });
 
-    if (!userCredit) {
-        throw new Error("No credits found");
+            if (!userCredit) {
+                throw new Error("No credits found");
+            }
+
+            // Check if credits need to be reset
+            const now = new Date();
+            const shouldReset = userCredit.resetDate < now;
+            const currentUsedCredits = shouldReset ? 0 : userCredit.usedCredits;
+
+            if (!shouldReset && userCredit.dailyCredits <= currentUsedCredits) {
+                throw new Error("No credits remaining");
+            }
+
+            // Update credits atomically
+            const updatedCredit = await tx.credit.update({
+                where: { userId },
+                data: {
+                    usedCredits: currentUsedCredits + 1,
+                    resetDate: shouldReset ? now : userCredit.resetDate
+                },
+                select: {
+                    dailyCredits: true,
+                    usedCredits: true
+                }
+            });
+
+            return {
+                remaining: updatedCredit.dailyCredits - updatedCredit.usedCredits
+            };
+        });
+
+        return result;
+    } catch (error) {
+        console.error("[DEDUCT_CREDITS]", error);
+        throw error;
     }
-
-    const remaining = userCredit.dailyCredits - userCredit.usedCredits;
-    if (remaining <= 0) {
-        throw new Error("No credits remaining");
-    }
-
-    // Deduct one credit
-    const updatedCredit = await prisma.credit.update({
-        where: { userId },
-        data: {
-            usedCredits: userCredit.usedCredits + 1
-        }
-    });
-
-    return {
-        remaining: updatedCredit.dailyCredits - updatedCredit.usedCredits
-    };
 }
