@@ -3,7 +3,7 @@
 import { Sparkles, RefreshCcw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getUserCredits } from "@/app/actions/manage-credits";
 import { formatDistanceToNow } from "date-fns";
 
@@ -35,7 +35,7 @@ export function CreditDisplay({ userId }: CreditDisplayProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    async function fetchCredits() {
+    const fetchCredits = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
@@ -47,11 +47,11 @@ export function CreditDisplay({ userId }: CreditDisplayProps) {
         } finally {
             setIsLoading(false);
         }
-    }
+    }, [userId]);
 
     useEffect(() => {
         fetchCredits();
-    }, [userId]);
+    }, [fetchCredits]);
 
     if (error) {
         return (

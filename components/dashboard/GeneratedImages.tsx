@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { Download, Loader2 } from "lucide-react";
@@ -25,14 +25,6 @@ interface GenerationSession {
   images: GeneratedImage[];
 }
 
-interface PaginatedResponse {
-  sessions: GenerationSession[];
-  pagination: {
-    nextCursor?: string;
-    total?: number;
-  };
-}
-
 interface GeneratedImagesProps {
   userId: string;
 }
@@ -45,11 +37,11 @@ export function GeneratedImages({ userId }: GeneratedImagesProps) {
   const [hasMore, setHasMore] = useState(true);
   const { ref: loadMoreRef, inView } = useInView();
 
-  const loadImages = async (cursor?: string) => {
+  const loadImages = useCallback(async (cursor?: string) => {
     try {
       setError(null);
       const data = await getUserImages(userId, { cursor, limit: 10 });
-      
+
       if (cursor) {
         // Append new sessions
         setSessions(prev => [...prev, ...data.sessions]);
@@ -57,7 +49,7 @@ export function GeneratedImages({ userId }: GeneratedImagesProps) {
         // Reset sessions on initial load
         setSessions(data.sessions);
       }
-      
+
       setNextCursor(data.pagination.nextCursor);
       setHasMore(!!data.pagination.nextCursor);
     } catch (error) {
@@ -66,20 +58,20 @@ export function GeneratedImages({ userId }: GeneratedImagesProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
 
   // Initial load
   useEffect(() => {
     setIsLoading(true);
     loadImages();
-  }, [userId]);
+  }, [loadImages]);
 
   // Load more when scrolling to the bottom
   useEffect(() => {
     if (inView && hasMore && !isLoading) {
       loadImages(nextCursor);
     }
-  }, [inView, hasMore, isLoading, nextCursor]);
+  }, [inView, hasMore, isLoading, nextCursor, loadImages]);
 
   const handleDownload = async (url: string, brandName: string) => {
     try {
@@ -174,7 +166,7 @@ export function GeneratedImages({ userId }: GeneratedImagesProps) {
                 </CardContent>
               </Card>
             ))}
-            
+
             {/* Load more trigger */}
             {hasMore && (
               <div ref={loadMoreRef} className="flex justify-center py-4">

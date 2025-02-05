@@ -9,7 +9,7 @@ export function BillingStatus() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [verifying, setVerifying] = useState(false);
-  
+
   const status = searchParams.get('status');
   const sessionId = searchParams.get('session_id');
 
@@ -32,7 +32,7 @@ export function BillingStatus() {
               variant: 'destructive',
             });
           }
-        } catch (error) {
+        } catch {
           toast({
             title: 'Error',
             description: 'Failed to verify payment status.',

@@ -1,12 +1,13 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { Stripe } from 'stripe';
-import stripeClient, { verifyStripeWebhook, updateUserCredits } from '@/lib/stripe';
+import { verifyStripeWebhook, updateUserCredits } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
 
-// Disable body parsing, as we need the raw body for webhook signature verification
+// Route segment config for Next.js App Router
+// See: https://nextjs.org/docs/app/api-reference/file-conventions/route-segment-config
 export const dynamic = 'force-dynamic';
-export const bodyParser = false;
+export const maxDuration = 300; // 5 minute maximum execution time for webhook
 
 export async function POST(req: Request) {
     try {
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
                 // Determine the subscription tier
                 const priceId = subscription.items.data[0].price.id;
                 let tier: 'FREE' | 'PRO' | 'ENTERPRISE';
-                
+
                 // Map price IDs to tiers
                 switch (priceId) {
                     case process.env.STRIPE_PRO_PRICE_ID:
