@@ -30,7 +30,7 @@ export default function Hero() {
                     </p>
                     <div className="mt-10 flex items-center justify-center gap-x-6">
                         <Button className="rounded-full">
-                            <Zap className="ml-2 h-4 w-4" />
+                            <Zap className="h-4 w-4" />
                             Generate Your Logo
                         </Button>
                     </div>
