@@ -68,10 +68,10 @@ export default async function BillingPage() {
         <h2 className="text-2xl font-bold mb-4">Available Plans</h2>
         <div className="grid gap-8 md:grid-cols-3">
           {/* Free Plan */}
-          <div className="rounded-lg border p-6 bg-card">
+          <div className="rounded-lg border p-6 bg-card flex flex-col">
             <h3 className="text-xl font-bold mb-2">Free</h3>
             <p className="text-3xl font-bold mb-4">$0<span className="text-base font-normal">/month</span></p>
-            <ul className="space-y-2 mb-6">
+            <ul className="space-y-2 mb-6 flex-1">
               <li>• 5 daily credits</li>
               <li>• Basic customization</li>
               <li>• PNG downloads</li>
@@ -83,7 +83,7 @@ export default async function BillingPage() {
           </div>
 
           {/* Pro Plan */}
-          <div className="rounded-lg border p-6 bg-card relative">
+          <div className="rounded-lg border p-6 bg-card relative flex flex-col">
             {credits.tier === 'PRO' && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-sm px-3 py-1 rounded-full">
                 Current
@@ -91,7 +91,7 @@ export default async function BillingPage() {
             )}
             <h3 className="text-xl font-bold mb-2">Pro</h3>
             <p className="text-3xl font-bold mb-4">$10<span className="text-base font-normal">/month</span></p>
-            <ul className="space-y-2 mb-6">
+            <ul className="space-y-2 mb-6 flex-1">
               <li>• 20 daily credits</li>
               <li>• Advanced customization</li>
               <li>• PNG & SVG downloads</li>
@@ -104,10 +104,10 @@ export default async function BillingPage() {
           </div>
 
           {/* Enterprise Plan */}
-          <div className="rounded-lg border p-6 bg-card">
+          <div className="rounded-lg border p-6 bg-card flex flex-col">
             <h3 className="text-xl font-bold mb-2">Enterprise</h3>
             <p className="text-3xl font-bold mb-4">$50<span className="text-base font-normal">/month</span></p>
-            <ul className="space-y-2 mb-6">
+            <ul className="space-y-2 mb-6 flex-1">
               <li>• 50 daily credits</li>
               <li>• All Pro features</li>
               <li>• Custom AI training</li>

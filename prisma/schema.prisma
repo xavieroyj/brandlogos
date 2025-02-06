@@ -133,6 +133,7 @@ model GeneratedImage {
 model Subscription {
   id                   String   @id @default(cuid())
   stripeSubscriptionId String   @unique
+  stripeSessionId      String?  @unique  // Track the checkout session that created this subscription
   userId               String
   user                 User     @relation(fields: [userId], references: [id])
   status               String
@@ -145,6 +146,7 @@ model Subscription {
   @@unique([id, priceId])
   @@index([userId])
   @@index([stripeSubscriptionId])
+  @@index([stripeSessionId])
 }
 
 enum SubscriptionTier {

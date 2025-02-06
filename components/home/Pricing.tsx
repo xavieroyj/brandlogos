@@ -45,8 +45,8 @@ const pricingData = [
 ];
 
 export default function Pricing() {
-    return (<div className="relative mx-auto max-w-7xl px-6 py-24">
-        <h2 className="text-center text-3xl font-bold mb-16 bg-gradient-primary bg-clip-text text-transparent">
+    return (<div className="relative mx-auto max-w-7xl px-6 py-24" id="pricing">
+        <h2 className="text-center text-3xl font-bold mb-16 bg-purple-400 bg-clip-text text-transparent">
             Simple, transparent pricing
         </h2>
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">

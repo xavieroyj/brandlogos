@@ -39,10 +39,8 @@ export default function NavHeader() {
 
                         {/* Desktop Navigation */}
                         <div className="hidden md:flex md:items-center md:space-x-8">
-                            <Link href="/#features" className="text-sm text-gray-300 hover:text-white">Features</Link>
-                            <Link href="/#pricing" className="text-sm text-gray-300 hover:text-white">Pricing</Link>
                             <Link href="/#how-it-works" className="text-sm text-gray-300 hover:text-white">How it Works</Link>
-                            <Link href="/#faq" className="text-sm text-gray-300 hover:text-white">FAQ</Link>
+                            <Link href="/#pricing" className="text-sm text-gray-300 hover:text-white">Pricing</Link>
                         </div>
 
                         {/* Desktop CTA or User Menu */}

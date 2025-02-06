@@ -13,6 +13,25 @@
   - First call validates credit availability
   - Second call updates the count atomically
 
+#### Billing System
+- `manageSubscription`: Handles subscription lifecycle
+  - Creates/updates Stripe customer
+  - Manages subscription status
+  - Updates credit allocation
+- `verifyPayment`: Payment verification flow
+  - Validates Stripe sessions
+  - Updates subscription status
+  - Tracks session usage
+  - Triggers credit updates
+  - Prevents session reuse
+
+#### Webhook System
+- `handleStripeWebhook`: Event-driven updates
+  - Signature verification
+  - Event type routing
+  - Atomic database updates
+  - Error recovery patterns
+
 #### Image Generation System
 - `getUserImages`: Data fetching matches dashboard grid requirements
   - All sessions needed for grid display
@@ -36,13 +55,42 @@ model Credit {
 
   @@index([userId, resetDate]) // Optimize credit reset queries
 }
+
+model Subscription {
+  // ... existing fields
+
+  @@index([userId, status]) // Optimize subscription lookups
+  @@index([stripeSubscriptionId]) // Optimize webhook queries
+}
 ```
 
-2. Implement Query Monitoring:
+2. Session Tracking Pattern:
+```typescript
+// Subscription model handles session tracking
+async function verifySession(
+  sessionId: string,
+  userId: string,
+  transaction: PrismaTransaction
+) {
+  const subscription = await transaction.subscription.findFirst({
+    where: {
+      OR: [
+        { stripeSubscriptionId: sessionId },
+        { stripeSessionId: sessionId }
+      ],
+      userId
+    }
+  });
+
+  if (subscription) {
+    throw new Error('Session already processed');
+  }
+}
+```
+
+3. Implement Query Monitoring:
 ```typescript
 // Add to lib/prisma.ts
-import { PrismaClient } from '@prisma/client'
-
 const prismaClientSingleton = () => {
   return new PrismaClient({
     log: [
@@ -65,76 +113,36 @@ if (process.env.NODE_ENV !== 'production') {
 }
 ```
 
-3. Future Scalability Considerations:
-
-If the application scales to handle more users/data:
-
-a. Consider Implementing Pagination:
-```typescript
-// Add to types.ts
-interface PaginationParams {
-  page?: number;
-  limit?: number;
-}
-
-// Future enhancement for getUserImages if needed
-async function getUserImages(userId: string, pagination?: PaginationParams) {
-  const { page = 0, limit = 10 } = pagination ?? {};
-  
-  const sessions = await prisma.generationSession.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' },
-    skip: page * limit,
-    take: limit,
-    // ... existing select fields
-  });
-  
-  const total = await prisma.generationSession.count({
-    where: { userId }
-  });
-  
-  return { sessions, total };
-}
-```
-
-b. Consider Caching for Credit Information:
-```typescript
-// Future enhancement if needed
-import { redis } from '@/lib/redis'
-
-async function getCachedCredits(userId: string) {
-  const cacheKey = `credits:${userId}`;
-  const cached = await redis.get(cacheKey);
-  
-  if (cached) {
-    return JSON.parse(cached);
-  }
-  
-  const credits = await getUserCredits(userId);
-  await redis.setex(cacheKey, 60, JSON.stringify(credits));
-  return credits;
-}
-```
-
 ### Current Recommendations
 
-1. Add Performance Monitoring:
-- Implement query logging in development
-- Track query durations
-- Monitor database load patterns
+1. Credit Management
+   - Maintain atomic credit operations
+   - Use database transactions for subscription changes
+   - Implement proper error recovery
+   - Add credit history tracking
+   - Validate credit updates
 
-2. Add Strategic Indices:
-- Add composite indices for common query patterns
-- Monitor their effectiveness
+2. Subscription Handling
+   - Verify webhook signatures
+   - Use idempotency keys
+   - Implement retry logic
+   - Maintain audit logs
+   - Track session usage
+   - Prevent duplicate processing
 
-3. Maintain Current Implementation:
-- Current database operations match UI requirements
-- Field selections are appropriately optimized
-- Multiple queries are justified where used
+3. Database Operations
+   - Use transactions for related updates
+   - Optimize query patterns
+   - Monitor query performance
+   - Implement proper indices
+   - Maintain data consistency
 
-4. Prepare for Scale:
-- Document current performance baselines
-- Plan for future pagination implementation
-- Consider caching strategies for frequently accessed data
+4. Error Recovery
+   - Implement webhook retry queue
+   - Add failure logging
+   - Create recovery procedures
+   - Monitor system health
+   - Track error patterns
+   - Implement proper rollbacks
 
-The current implementation is well-optimized for the current requirements. Future optimizations should be driven by actual performance metrics and scaling needs rather than premature optimization.
+The current implementation effectively handles billing and subscription management. Recent improvements in session tracking and subscription model consolidation have enhanced system reliability. Future optimizations should focus on scaling patterns and monitoring systems rather than premature optimization.

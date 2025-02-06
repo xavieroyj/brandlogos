@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100" height="100" rx="20" fill="hsl(315 100% 62% / 0.1)"/>
+  <path d="M30 50C30 38.954 38.954 30 50 30C61.046 30 70 38.954 70 50" stroke="hsl(271 100% 62%)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M70 50C70 61.046 61.046 70 50 70C38.954 70 30 61.046 30 50" stroke="hsl(315 100% 62%)" stroke-width="4" stroke-linecap="round" stroke-dasharray="4 4"/>
+</svg>
