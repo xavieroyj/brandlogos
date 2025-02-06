@@ -7,7 +7,7 @@ import { removeThinkTags } from "@/lib/helper";
 import { iconTemplates, getStyleGuide } from "@/lib/prompt/templates/icon-templates";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { uploadToS3 } from "@/lib/storage/s3-client";
+import { S3Client } from "@/lib/storage/s3-client";
 import { prisma } from "@/lib/prisma";
 import { nanoid } from 'nanoid';
 import { deductCredits } from "./manage-credits";
@@ -57,9 +57,11 @@ export async function generateIcons(data: BrandFormValues): Promise<GenerateIcon
         const { images } = await generateImage({
             model: imageModel,
             prompt: iconTextPrompt,
-            n: 1, // Generate 4 images
-            size: "1024x1024", // Square format for icons
+            n: 4, // Generate 4 images
+            size: "512x512", // Square format for icons
         });
+
+        const s3Client = S3Client.getInstance();
 
         // Process and store each image
         const storedImages = await Promise.all(
@@ -74,7 +76,7 @@ export async function generateIcons(data: BrandFormValues): Promise<GenerateIcon
                 const s3Key = `${session.user.id}/${data.brandName}/${imageId}.png`;
 
                 // Upload to S3
-                const s3Url = await uploadToS3(base64Data, s3Key);
+                const s3Url = await s3Client.uploadToS3(base64Data, s3Key);
                 console.log("S3 URL:", s3Url);
 
                 return {
